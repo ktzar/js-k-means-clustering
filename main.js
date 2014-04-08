@@ -7,6 +7,7 @@ var Clusters = function (k, points) {
         maxX: -Infinity,
         maxY: -Infinity
     };
+    this.clusters = false;
 
     var that = this;
 
@@ -20,20 +21,60 @@ var Clusters = function (k, points) {
         }
     }
 
-    function init() {
-        initBoundaries();
+    function initClusters() {
         that.clusters = new Array(k);
-
         for (var i = 0; i<k; i++) {
             that.clusters[i] = {
-                x: parseInt(that.bounds.minX + Math.random() * that.bounds.maxX, 10),
-                y: parseInt(that.bounds.minY + Math.random() * that.bounds.maxY, 10)
+                x: Math.round(that.bounds.minX + Math.random() * that.bounds.maxX),
+                y: Math.round(that.bounds.minY + Math.random() * that.bounds.maxY)
             };
         }
     }
 
-    init();
+    function getDistance(a, b) {
+        return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
+    }
 
+    function assignPoints() {
+        var point, cluster, c;
+        //empty clusters' points
+        for (c = 0; c < that.clusters.length; c++) {
+            that.clusters[c].points = [];
+        }
+        for(var p = 0; p < that.points.length ; p++) {
+            point = that.points[p];
+            point.cluster = that.clusters[0];
+            for (c = 1; c < that.clusters.length; c++) {
+                cluster = that.clusters[c];
+                if (getDistance(point, point.cluster) > getDistance(point, cluster)) {
+                    point.cluster = cluster;
+                }
+            }
+            point.cluster.points.push(point);
+        }
+    }
+
+    function init() {
+        initBoundaries();
+        initClusters();
+        assignPoints();
+    }
+
+    //Move cluster to the mean of its points
+    this.step = function () {
+        var totalX = 0, totalY = 0;
+        for (var c = 1; c < that.clusters.length; c++) {
+            cluster = that.clusters[c];
+            for (i = 0; i < cluster.points.length ; i ++) {
+                totalX += cluster.points[i].x;
+                totalY += cluster.points[i].y;
+            }
+            cluster.x = Math.round(totalX / cluster.points.length);
+            cluster.y = Math.round(totalY / cluster.points.length);
+        }
+    };
+
+    init();
 
 };
 
@@ -56,8 +97,9 @@ $(function () {
     }
 
     function stepClusters() {
-        if (clisters) {
+        if (clusters) {
             clusters.step();
+            redraw();
         }
     }
 
@@ -70,9 +112,27 @@ $(function () {
         ctx.stroke();
     }
 
+    function drawLine (pointA, pointB) {
+        ctx.strokeStyle = 'navy';
+        ctx.lineWidth = 1.0;
+        ctx.beginPath();
+        ctx.moveTo (pointA.x, pointA.y);
+        ctx.lineTo (pointB.x, pointB.y);
+        ctx.stroke();
+    }
+
     function addPoint (x, y) {
         points.push({x:x,y:y});
         redraw();
+    }
+
+    function addRandom () {
+        for (var i = 0; i < 20; i ++) {
+            addPoint(
+                Math.round(Math.random()*cnv.width()),
+                Math.round(Math.random()*cnv.height())
+            );
+        }
     }
 
     function redraw () {
@@ -81,6 +141,9 @@ $(function () {
         for (i in points) {
             point = points[i];
             drawCircle(point.x, point.y);
+            if (point.cluster) {
+                drawLine(point, point.cluster);
+            }
         }
 
         if (clusters) {
@@ -102,6 +165,7 @@ $(function () {
 
         $('#debug').click(function () { debugger; });
         $('#init').click(initClusters);
+        $('#add').click(addRandom);
         $('#step').click(stepClusters);
 
         console.log(cnv, ctx);
