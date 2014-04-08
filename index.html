@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Bootstrap 3 Template</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <!-- Bootstrap core CSS -->
+        <link href="http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.1.0/css/bootstrap.css" rel="stylesheet" media="screen">
+        <link href="style.css" rel="stylesheet" media="screen">
+    </head>
+    <body>
+        <div class="container">
+            <div class="row">
+                <h1>K-Cluster</h1>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <h3>Actions</h3>
+                    <p><button id="init">Init</button></p>
+                    <p><button id="step">Step</button></p>
+                </div>
+                <div class="col-md-6">
+                    <p>Representation</p>
+                    <canvas id="plot" width="400" height="300"/>
+                </div>
+            </div>
+            <div class="row">
+                <button id="debug">debug</button>
+            </div>
+        </div>
+        <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+        <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+        <!-- Include all compiled plugins (below), or include individual files as needed -->
+        <script src="http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.1.0/js/bootstrap.min.js"></script>
+        <script src="./main.js"></script>
+    </body>
+</html>
