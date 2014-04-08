@@ -1,35 +1,40 @@
 var Clusters = function (k, points) {
     this.k = k;
     this.points = points;
-    this.bounds = getBoundaries(points);
+    this.bounds = {
+        minX: Infinity,
+        minY: Infinity,
+        maxX: -Infinity,
+        maxY: -Infinity
+    };
 
-    function getBoundaries(points) {
-        var bounds = {
-            minX: Infinity,
-            minY: Infinity,
-            maxX: -Infinity,
-            maxY: -Infinity
-        }, point;
+    var that = this;
 
-        for (var i in points) {
-            point = points[i];
-            if (point.x < bounds.minX) bounds.minX = point.x;
-            if (point.y < bounds.minY) bounds.minY = point.y;
-            if (point.y > bounds.maxX) bounds.maxX = point.x;
-            if (point.y > bounds.maxY) bounds.maxY = point.y;
+    function initBoundaries() {
+        for (var i in that.points) {
+            point = that.points[i];
+            if (point.x < that.bounds.minX) that.bounds.minX = point.x;
+            if (point.y < that.bounds.minY) that.bounds.minY = point.y;
+            if (point.y > that.bounds.maxX) that.bounds.maxX = point.x;
+            if (point.y > that.bounds.maxY) that.bounds.maxY = point.y;
         }
-
-        return bounds;
     }
 
-    this.clusters = new Array(k);
+    function init() {
+        initBoundaries();
+        that.clusters = new Array(k);
 
-    for (var i = 0; i<k; i++) {
-        this.clusters[i] = {
-            x: parseInt(this.bounds.minX + Math.random() * this.bounds.maxX, 10),
-            y: parseInt(this.bounds.minY + Math.random() * this.bounds.maxY, 10)
-        };
+        for (var i = 0; i<k; i++) {
+            that.clusters[i] = {
+                x: parseInt(that.bounds.minX + Math.random() * that.bounds.maxX, 10),
+                y: parseInt(that.bounds.minY + Math.random() * that.bounds.maxY, 10)
+            };
+        }
     }
+
+    init();
+
+
 };
 
 
@@ -38,15 +43,22 @@ $(function () {
     var points = [],
         cnv,
         ctx,
-        clusters;
+        clusters,
+        K = 5;
 
     function initClusters() {
-        console.log('init');
-        clusters = new Clusters(5, points);
+        if (points.length < K) {
+            alert("No points yet, draw "+K+" before");
+        } else {
+            clusters = new Clusters(K, points);
+            redraw();
+        }
     }
 
     function stepClusters() {
-        console.log('step');
+        if (clisters) {
+            clusters.step();
+        }
     }
 
     function drawCircle (x, y, color) {
@@ -58,12 +70,24 @@ $(function () {
         ctx.stroke();
     }
 
+    function addPoint (x, y) {
+        points.push({x:x,y:y});
+        redraw();
+    }
+
     function redraw () {
         ctx.clearRect(0,0,cnv.width(), cnv.height());
-        var point;
-        for (var i in points) {
+        var point, i;
+        for (i in points) {
             point = points[i];
             drawCircle(point.x, point.y);
+        }
+
+        if (clusters) {
+            for (i in clusters.clusters) {
+                point = clusters.clusters[i];
+                drawCircle(point.x, point.y, 'red');
+            }
         }
     }
 
@@ -73,9 +97,7 @@ $(function () {
         ctx = cnv[0].getContext('2d');
 
         cnv.click(function (e) {
-            points.push({x:e.offsetX,y:e.offsetY});
-            redraw();
-            console.log(e.offsetX, e.offsetY);
+            addPoint(e.offsetX, e.offsetY);
         });
 
         $('#debug').click(function () { debugger; });
