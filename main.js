@@ -1,3 +1,7 @@
+function log(message) {
+    $('#debug').val($('#debug').val() + "\n" + message);
+}
+
 var Clusters = function (k, points) {
     this.k = k;
     this.points = points;
@@ -28,6 +32,7 @@ var Clusters = function (k, points) {
                 x: Math.round(that.bounds.minX + Math.random() * that.bounds.maxX),
                 y: Math.round(that.bounds.minY + Math.random() * that.bounds.maxY)
             };
+            console.log('cluster '+i, that.clusters[i]);
         }
     }
 
@@ -36,13 +41,15 @@ var Clusters = function (k, points) {
     }
 
     function assignPoints() {
-        var point, cluster, c;
+        var point, cluster, c, changes = 0;
         //empty clusters' points
         for (c = 0; c < that.clusters.length; c++) {
             that.clusters[c].points = [];
         }
         for(var p = 0; p < that.points.length ; p++) {
             point = that.points[p];
+            originalCluster = point.cluster;
+
             point.cluster = that.clusters[0];
             for (c = 1; c < that.clusters.length; c++) {
                 cluster = that.clusters[c];
@@ -50,8 +57,12 @@ var Clusters = function (k, points) {
                     point.cluster = cluster;
                 }
             }
+            if (point.cluster != originalCluster) {
+                changes ++;
+            }
             point.cluster.points.push(point);
         }
+        return changes;
     }
 
     function init() {
@@ -62,9 +73,10 @@ var Clusters = function (k, points) {
 
     //Move cluster to the mean of its points
     this.step = function () {
-        var totalX = 0, totalY = 0;
+        var totalX, totalY;
         for (var c = 1; c < that.clusters.length; c++) {
             cluster = that.clusters[c];
+            totalX = totalY = 0;
             for (i = 0; i < cluster.points.length ; i ++) {
                 totalX += cluster.points[i].x;
                 totalY += cluster.points[i].y;
@@ -72,6 +84,7 @@ var Clusters = function (k, points) {
             cluster.x = Math.round(totalX / cluster.points.length);
             cluster.y = Math.round(totalY / cluster.points.length);
         }
+        return assignPoints();
     };
 
     init();
@@ -81,6 +94,8 @@ var Clusters = function (k, points) {
 
 $(function () {
 
+    var randomSpread = 100;
+
     var points = [],
         cnv,
         ctx,
@@ -88,18 +103,40 @@ $(function () {
         K = 5;
 
     function initClusters() {
+        K = parseInt($('#K').val(), 10);
         if (points.length < K) {
             alert("No points yet, draw "+K+" before");
         } else {
             clusters = new Clusters(K, points);
+            $('#K').attr('disabled');
             redraw();
         }
     }
 
     function stepClusters() {
-        if (clusters) {
-            clusters.step();
-            redraw();
+        if (!clusters) {
+            initClusters();
+        }
+        clusters.step();
+        redraw();
+    }
+    
+    function stepUntilConvergenceClusters(previousChanges) {
+        var changes;
+        if (!clusters) {
+            initClusters();
+        }
+        changes = clusters.step();
+        redraw();
+        //Convergence clause
+        if (
+            (typeof previousChanges !== undefined && previousChanges < changes) ||
+            changes === 0
+        ) {
+            log('Convergence achieved');
+            return;
+        } else {
+            setTimeout(stepUntilConvergenceClusters, 250);
         }
     }
 
@@ -155,18 +192,26 @@ $(function () {
     }
 
     function init() {
-
         cnv = $('#plot');
         ctx = cnv[0].getContext('2d');
 
         cnv.click(function (e) {
             addPoint(e.offsetX, e.offsetY);
+            if (e.altKey) {
+                for (var i = 0; i < 20; i ++) {
+                    addPoint(
+                        Math.round(e.offsetX + (Math.random()*randomSpread-randomSpread/2)),
+                        Math.round(e.offsetY + (Math.random()*randomSpread-randomSpread/2))
+                    );
+                }
+            }
         });
 
         $('#debug').click(function () { debugger; });
         $('#init').click(initClusters);
         $('#add').click(addRandom);
         $('#step').click(stepClusters);
+        $('#step_all').click(stepUntilConvergenceClusters);
 
         console.log(cnv, ctx);
     }
