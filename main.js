@@ -1,5 +1,5 @@
 function log(message) {
-    $('#debug').val($('#debug').val() + "\n" + message);
+    $('#log').val($('#log').val() + message + "\n" );
 }
 
 var Clusters = function (k, points) {
@@ -15,13 +15,21 @@ var Clusters = function (k, points) {
 
     var that = this;
 
+    function init() {
+        initBoundaries();
+        initClusters();
+        assignPointsToClusters();
+    }
+
     function initBoundaries() {
+        var x, y;
         for (var i in that.points) {
-            point = that.points[i];
-            if (point.x < that.bounds.minX) that.bounds.minX = point.x;
-            if (point.y < that.bounds.minY) that.bounds.minY = point.y;
-            if (point.y > that.bounds.maxX) that.bounds.maxX = point.x;
-            if (point.y > that.bounds.maxY) that.bounds.maxY = point.y;
+            x = that.points[i].x;
+            y = that.points[i].y;
+            if (x < that.bounds.minX) that.bounds.minX = x;
+            if (y < that.bounds.minY) that.bounds.minY = y;
+            if (y > that.bounds.maxX) that.bounds.maxX = x;
+            if (y > that.bounds.maxY) that.bounds.maxY = y;
         }
     }
 
@@ -40,7 +48,7 @@ var Clusters = function (k, points) {
         return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
     }
 
-    function assignPoints() {
+    function assignPointsToClusters() {
         var point, cluster, c, changes = 0;
         //empty clusters' points
         for (c = 0; c < that.clusters.length; c++) {
@@ -65,14 +73,7 @@ var Clusters = function (k, points) {
         return changes;
     }
 
-    function init() {
-        initBoundaries();
-        initClusters();
-        assignPoints();
-    }
-
-    //Move cluster to the mean of its points
-    this.step = function () {
+    function recenterClusters() {
         var totalX, totalY;
         for (var c = 1; c < that.clusters.length; c++) {
             cluster = that.clusters[c];
@@ -84,7 +85,12 @@ var Clusters = function (k, points) {
             cluster.x = Math.round(totalX / cluster.points.length);
             cluster.y = Math.round(totalY / cluster.points.length);
         }
-        return assignPoints();
+    }
+
+    //Move cluster to the mean of its points
+    this.step = function () {
+        recenterClusters();
+        return assignPointsToClusters();
     };
 
     init();
@@ -136,7 +142,7 @@ $(function () {
             log('Convergence achieved');
             return;
         } else {
-            setTimeout(stepUntilConvergenceClusters, 250);
+            setTimeout(stepUntilConvergenceClusters, 0);
         }
     }
 

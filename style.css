@@ -1,3 +1,6 @@
 #plot {
     border: 1px solid #999;
 }
+#debug {
+    font-family: monospace;
+}
