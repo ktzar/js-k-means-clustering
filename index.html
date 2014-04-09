@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Bootstrap 3 Template</title>
+        <title>k-cluster implementation</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
         <!-- Bootstrap core CSS -->
@@ -18,16 +18,25 @@
                     <h3>Params</h3>
                     <p><label>K value</label><input id="K" value="5"/></p>
                     <h3>Actions</h3>
-                    <p><button id="add">Add 20 random points</button></p>
-                    <p><button id="init">Init</button></p>
-                    <p><button id="step">Step</button></p>
-                    <p><button id="step_all">Step until convergence</button></p>
-                    <p><textarea id="log" cols="50" rows="5"></textarea></p>
+                    <fieldset>
+                        <legend>Calculate</legend>
+                        <p><button id="colour">Find groups and colour them</button></p>
+                        <p><button id="voronoi">Draw voronoi diagram</button></p>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend>Advanced</legend>
+                        <p><button id="add">Add 20 random points</button></p>
+                        <p><button id="init">Init</button></p>
+                        <p><button id="step">Step</button></p>
+                        <p><button id="step_all">Step until convergence</button></p>
+                        <p><textarea id="log" cols="50" rows="5"></textarea></p>
+                    </fieldset>
                 </div>
                 <div class="col-md-6">
                     <p>Representation</p>
-                    <canvas id="plot" width="400" height="300"/>
                     <p>Click to add points, Alt+click to add 10 random points nearby.</p>
+                    <canvas id="plot" width="400" height="300"/>
                 </div>
             </div>
             <div class="row">

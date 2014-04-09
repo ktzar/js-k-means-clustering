@@ -2,7 +2,15 @@ function log(message) {
     $('#log').val($('#log').val() + message + "\n" );
 }
 
-var Clusters = function (k, points) {
+var Clusters = function (k, points, options) {
+    if (typeof options === 'undefined') {
+        options = {
+            //http://en.wikipedia.org/wiki/K-means_clustering#Initialization_methods
+            initMode: 'forgy',// forgy or random
+        };
+    }
+
+
     this.k = k;
     this.points = points;
     this.bounds = {
@@ -35,8 +43,11 @@ var Clusters = function (k, points) {
 
     function initClusters() {
         that.clusters = new Array(k);
+        var rangeX = that.bounds.maxX - that.bounds.minX,
+            rangeY = that.bounds.maxY - that.bounds.minY;
         for (var i = 0; i<k; i++) {
             that.clusters[i] = {
+                index: i,
                 x: Math.round(that.bounds.minX + Math.random() * that.bounds.maxX),
                 y: Math.round(that.bounds.minY + Math.random() * that.bounds.maxY)
             };
@@ -58,13 +69,8 @@ var Clusters = function (k, points) {
             point = that.points[p];
             originalCluster = point.cluster;
 
-            point.cluster = that.clusters[0];
-            for (c = 1; c < that.clusters.length; c++) {
-                cluster = that.clusters[c];
-                if (getDistance(point, point.cluster) > getDistance(point, cluster)) {
-                    point.cluster = cluster;
-                }
-            }
+            point.cluster = that.closerCluster(point.x, point.y);
+
             if (point.cluster != originalCluster) {
                 changes ++;
             }
@@ -87,10 +93,43 @@ var Clusters = function (k, points) {
         }
     }
 
+
+    /* Public methods */
+
     //Move cluster to the mean of its points
     this.step = function () {
-        recenterClusters();
+        var hasAClusterNoPoints = false;
+        // if there's a cluster with no points, restart
+        for (var c = 1; c < that.clusters.length; c++) {
+            if ( that.clusters[c].points.length === 0) {
+                hasAClusterNoPoints = true;
+                break;
+            }
+        }
+
+        if (hasAClusterNoPoints) {
+            initClusters();
+        } else {
+            recenterClusters();
+        }
         return assignPointsToClusters();
+    };
+
+    this.closerCluster = function (x, y) {
+        var point = {
+            x: x,
+            y: y,
+            cluster: that.clusters[0]
+        }, cluster;
+
+        point.cluster = that.clusters[0];
+        for (c = 1; c < that.clusters.length; c++) {
+            cluster = that.clusters[c];
+            if (getDistance(point, point.cluster) > getDistance(point, cluster)) {
+                point.cluster = cluster;
+            }
+        }
+        return point.cluster;
     };
 
     init();
@@ -101,6 +140,8 @@ var Clusters = function (k, points) {
 $(function () {
 
     var randomSpread = 100;
+    var colours = ['red', 'green', 'blue', 'purple', 'orange', 'yellow', 'brown', 'black'];
+    var voronoiDefinition = 2;
 
     var points = [],
         cnv,
@@ -142,13 +183,21 @@ $(function () {
             log('Convergence achieved');
             return;
         } else {
-            setTimeout(stepUntilConvergenceClusters, 0);
+            stepUntilConvergenceClusters();
         }
     }
 
-    function drawCircle (x, y, color) {
+    function colourClusters() {
+        clusters = false;
+        stepUntilConvergenceClusters();
+        redrawColours();
+    }
+
+    function drawCircle (x, y, color, fill) {
         if (typeof color === 'undefined') color = 'green';
+        if (typeof fill !== 'undefined') fill = 'none';
         ctx.strokeStyle = color;
+        ctx.fillStyle = fill;
         ctx.lineWidth = 5.0;
         ctx.beginPath();
         ctx.arc (x, y, 2.5, 0, 2*Math.PI);
@@ -197,6 +246,39 @@ $(function () {
         }
     }
 
+    function redrawColours () {
+        var i, p;
+        ctx.clearRect(0,0,cnv.width(), cnv.height());
+        if (clusters) {
+            for (i in clusters.clusters) {
+                for (p in clusters.clusters[i].points) {
+                    point = clusters.clusters[i].points[p];
+                    drawCircle(point.x, point.y, colours[i%colours.length]);
+                }
+            }
+        }
+    }
+
+    function voronoiDiagram () {
+        var x, y;
+        var canvasWidth = cnv[0].width;
+        var canvasHeight = cnv[0].height;
+
+        function drawDot (x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect( x, y, voronoiDefinition, voronoiDefinition);
+        }
+
+        ctx.globalAlpha = 0.5;
+        for ( x=0 ; x<canvasWidth ; x+=voronoiDefinition) {
+            for ( y=0 ; y<canvasHeight ; y+=voronoiDefinition) {
+                cluster = clusters.closerCluster(x,y);
+                drawDot(x, y, colours[cluster.index%colours.length]);
+            }
+        }
+        ctx.globalAlpha = 1;
+    }
+
     function init() {
         cnv = $('#plot');
         ctx = cnv[0].getContext('2d');
@@ -211,6 +293,10 @@ $(function () {
                     );
                 }
             }
+            if (clusters) {
+                stepUntilConvergenceClusters();
+                voronoiDiagram();
+            }
         });
 
         $('#debug').click(function () { debugger; });
@@ -218,11 +304,12 @@ $(function () {
         $('#add').click(addRandom);
         $('#step').click(stepClusters);
         $('#step_all').click(stepUntilConvergenceClusters);
+        $('#colour').click(colourClusters);
+        $('#voronoi').click(voronoiDiagram);
 
         console.log(cnv, ctx);
     }
 
     init();
-
 
 });
