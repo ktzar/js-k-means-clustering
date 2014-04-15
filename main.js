@@ -48,8 +48,8 @@ var Clusters = function (k, points, options) {
         for (var i = 0; i<k; i++) {
             that.clusters[i] = {
                 index: i,
-                x: Math.round(that.bounds.minX + Math.random() * that.bounds.maxX),
-                y: Math.round(that.bounds.minY + Math.random() * that.bounds.maxY)
+                x: Math.round(that.bounds.minX + Math.random() * (that.bounds.maxX - that.bounds.minX)),
+                y: Math.round(that.bounds.minY + Math.random() * (that.bounds.maxY - that.bounds.minY))
             };
             console.log('cluster '+i, that.clusters[i]);
         }
@@ -81,7 +81,7 @@ var Clusters = function (k, points, options) {
 
     function recenterClusters() {
         var totalX, totalY;
-        for (var c = 1; c < that.clusters.length; c++) {
+        for (var c = 0; c < that.clusters.length; c++) {
             cluster = that.clusters[c];
             totalX = totalY = 0;
             for (i = 0; i < cluster.points.length ; i ++) {
