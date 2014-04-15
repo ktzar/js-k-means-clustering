@@ -285,7 +285,7 @@ $(function () {
 
         cnv.click(function (e) {
             addPoint(e.offsetX, e.offsetY);
-            if (e.altKey) {
+            if (e.shiftKey) {
                 for (var i = 0; i < 20; i ++) {
                     addPoint(
                         Math.round(e.offsetX + (Math.random()*randomSpread-randomSpread/2)),
