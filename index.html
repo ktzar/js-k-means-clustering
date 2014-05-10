@@ -51,7 +51,9 @@
         <script>
             define( "jquery", [], function () { return jQuery; } );
             require(['./js/main'], function (main) {
-                console.log('loaded!');
+                $(function () {
+                    main.init();
+                });
             });
         </script>
     </body>

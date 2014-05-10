@@ -1,4 +1,7 @@
 define([], function () {
+
+    var colours = ['red', 'green', 'blue', 'purple', 'orange', 'yellow', 'brown', 'black'];
+
     var Clusters = function (k, points, options) {
         if (typeof options === 'undefined') {
             options = {
@@ -131,5 +134,8 @@ define([], function () {
 
         init();
     };
-    return Clusters;
+    return {
+        init: Clusters,
+        colours: colours
+    }
 });
