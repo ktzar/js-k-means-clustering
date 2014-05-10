@@ -1,13 +1,13 @@
 define([
     'jquery',
     './modules/Clusters',
-    './modules/Voronoi'
-], function ($, Clusters, Voronoi) {
+    './modules/Voronoi',
+    './modules/Drawing'
+], function ($, Clusters, Voronoi, drawing) {
     var randomSpread = 100;
 
     var points = [],
         cnv,
-        ctx,
         clusters,
         K = 5;
         cache = {
@@ -70,25 +70,6 @@ define([
         redrawColours();
     }
 
-    function drawCircle (x, y, color, fill) {
-        if (typeof color === 'undefined') color = 'green';
-        if (typeof fill !== 'undefined') fill = 'none';
-        ctx.strokeStyle = color;
-        ctx.fillStyle = fill;
-        ctx.lineWidth = 5.0;
-        ctx.beginPath();
-        ctx.arc (x, y, 2.5, 0, 2*Math.PI);
-        ctx.stroke();
-    }
-
-    function drawLine (pointA, pointB) {
-        ctx.strokeStyle = 'navy';
-        ctx.lineWidth = 1.0;
-        ctx.beginPath();
-        ctx.moveTo (pointA.x, pointA.y);
-        ctx.lineTo (pointB.x, pointB.y);
-        ctx.stroke();
-    }
 
     function addPoint (x, y) {
         points.push({x:x,y:y});
@@ -105,32 +86,32 @@ define([
     }
 
     function redraw () {
-        ctx.clearRect(0,0,cnv.width(), cnv.height());
+        drawing.clear();
         var point, i;
         for (i in points) {
             point = points[i];
-            drawCircle(point.x, point.y);
+            drawing.drawCircle(point.x, point.y);
             if (point.cluster) {
-                drawLine(point, point.cluster);
+                drawing.drawLine(point, point.cluster);
             }
         }
 
         if (clusters) {
             for (i in clusters.clusters) {
                 point = clusters.clusters[i];
-                drawCircle(point.x, point.y, 'red');
+                drawing.drawCircle(point.x, point.y, 'red');
             }
         }
     }
 
     function redrawColours () {
         var i, p;
-        ctx.clearRect(0,0,cnv.width(), cnv.height());
+        drawing.clear();
         if (clusters) {
             for (i in clusters.clusters) {
                 for (p in clusters.clusters[i].points) {
                     point = clusters.clusters[i].points[p];
-                    drawCircle(point.x, point.y, Clusters.colours[i%Clusters.colours.length]);
+                    drawing.drawCircle(point.x, point.y, Clusters.colours[i%Clusters.colours.length]);
                 }
             }
         }
@@ -142,8 +123,6 @@ define([
 
     function init() {
         cnv = $('#plot');
-        ctx = cnv[0].getContext('2d');
-
         cnv.click(function (e) {
             addPoint(e.offsetX, e.offsetY);
             if (e.shiftKey) {
@@ -159,6 +138,8 @@ define([
                 voronoiDiagram();
             }
         });
+
+        drawing.init(cnv);
 
         cache.debug.click(function () { debugger; });
         cache.init.click(initClusters);
