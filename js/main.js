@@ -4,8 +4,6 @@ define([
     './modules/Voronoi',
     './modules/Drawing'
 ], function ($, Clusters, Voronoi, drawing) {
-    var randomSpread = 100;
-
     var points = [],
         cnv,
         clusters,
@@ -18,7 +16,8 @@ define([
             step: $('#step'),
             step_all: $('#step_all'),
             colour: $('#colour'),
-            voronoi: $('#voronoi')
+            voronoi: $('#voronoi'),
+            kInput: $('#K')
         };
 
     function log(message) {
@@ -27,35 +26,30 @@ define([
 
 
     function initClusters() {
-        K = parseInt($('#K').val(), 10);
+        K = parseInt(cache.kInput.val(), 10);
         if (points.length < K) {
             alert("No points yet, draw "+K+" before");
         } else {
             clusters = new Clusters.init(K, points);
-            $('#K').attr('disabled');
+            cache.kInput.attr('disabled');
             redraw();
         }
     }
 
     function stepClusters() {
-        if (!clusters) {
-            initClusters();
-        }
+        !clusters && initClusters();
         clusters.step();
         redraw();
     }
     
     function stepUntilConvergenceClusters(previousChanges) {
         var changes;
-        if (!clusters) {
-            initClusters();
-        }
+        !clusters && initClusters();
         changes = clusters.step();
         redraw();
         //Convergence clause
-        if (
-            (typeof previousChanges !== undefined && previousChanges < changes) ||
-            changes === 0
+        if ( changes === 0 ||
+            (typeof previousChanges !== undefined && previousChanges < changes)
         ) {
             log('Convergence achieved');
             return;
@@ -76,12 +70,27 @@ define([
         redraw();
     }
 
-    function addRandom () {
-        for (var i = 0; i < 20; i ++) {
-            addPoint(
-                Math.round(Math.random()*cnv.width()),
-                Math.round(Math.random()*cnv.height())
-            );
+    function addRandom (mouseEvent) {
+        var randomSpread = 100,
+            randomCount = 20;
+
+        function getSpread() {
+            return Math.random()*randomSpread-randomSpread/2;
+        }
+        for (var i = 0; i < randomCount; i ++) {
+            if (mouseEvent) {
+                for (var i = 0; i < randomCount; i ++) {
+                    addPoint(
+                        Math.round(mouseEvent.offsetX + getSpread()),
+                        Math.round(mouseEvent.offsetY + getSpread())
+                    );
+                }
+            } else {
+                addPoint(
+                    Math.round(Math.random()*cnv.width()),
+                    Math.round(Math.random()*cnv.height())
+                );
+            }
         }
     }
 
@@ -126,12 +135,7 @@ define([
         cnv.click(function (e) {
             addPoint(e.offsetX, e.offsetY);
             if (e.shiftKey) {
-                for (var i = 0; i < 20; i ++) {
-                    addPoint(
-                        Math.round(e.offsetX + (Math.random()*randomSpread-randomSpread/2)),
-                        Math.round(e.offsetY + (Math.random()*randomSpread-randomSpread/2))
-                    );
-                }
+                addRandom(e);
             }
             if (clusters) {
                 stepUntilConvergenceClusters();
