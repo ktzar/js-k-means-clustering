@@ -154,7 +154,5 @@ define([
         cache.voronoi.click(voronoiDiagram);
     }
 
-    return {
-        init: init
-    };
+    init();
 });
